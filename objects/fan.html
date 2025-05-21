@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AR Wall-Mounted 3D TV</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #111;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #cameraContainer {
+      width: 640px;
+      height: 480px;
+      border: 4px solid #00ccff;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      background: black;
+      box-shadow: 0 0 20px #00ccff;
+      margin-bottom: 20px;
+    }
+    video#cameraFeed {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    model-viewer {
+      width: 280px;
+      height: 180px;
+      position: absolute;
+      top: 120px;  /* wall placement */
+      left: 180px; /* center in 640px */
+      pointer-events: none;
+      display: none;
+      z-index: 10;
+    }
+    #openCameraButton {
+      padding: 15px 30px;
+      font-size: 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 20px;
+      z-index: 2;
+    }
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Click Button to Start Camera & View TV on Wall</h1>
+
+  <div id="cameraContainer">
+    <video id="cameraFeed" autoplay playsinline muted></video>
+    
+    <!-- 3D TV model viewer -->
+    <model-viewer
+      id="tvModel"
+      src="https://modelviewer.dev/shared-assets/models/TV.glb"
+      alt="3D TV model"
+      auto-rotate
+      camera-controls
+      shadow-intensity="1"
+      exposure="1"
+      environment-image="neutral"
+      style="background: transparent;">
+    </model-viewer>
+  </div>
+
+  <button id="openCameraButton">Open Camera</button>
+
+  <script>
+    const openCameraButton = document.getElementById('openCameraButton');
+    const tvModel = document.getElementById('tvModel');
+    const cameraFeed = document.getElementById('cameraFeed');
+
+    async function openPreferredCamera() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        if (videoDevices.length === 0) {
+          alert("No video input devices found!");
+          return;
+        }
+
+        // Prefer DroidCam if available
+        const droidCam = videoDevices.find(device =>
+          device.label.toLowerCase().includes("droidcam")
+        );
+
+        const selectedDevice = droidCam || videoDevices[0];
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: selectedDevice.deviceId }
+        });
+
+        cameraFeed.srcObject = stream;
+
+        // Show model
+        tvModel.style.display = 'block';
+        openCameraButton.style.display = 'none';
+
+      } catch (err) {
+        alert('Camera access denied or not available!');
+        console.error(err);
+      }
+    }
+
+    openCameraButton.addEventListener('click', openPreferredCamera);
+  </script>
+
+</body>
+</html>
